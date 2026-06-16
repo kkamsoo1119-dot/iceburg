@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>감정의 빙산 마음 탐험 앱 (WBI)</title>
+    <style>
+        :root {
+            --primary: #4a90e2;
+            --bg: #f5f7fa;
+            --card-bg: #ffffff;
+            --text: #333333;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Malgun Gothic', sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; }
+        .container { max-width: 600px; width: 100%; background: var(--card-bg); padding: 25px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); }
+        h1 { text-align: center; color: var(--primary); margin-bottom: 25px; font-size: 24px; font-weight: 800; }
+        
+        .step { display: none; }
+        .step.active { display: block; animation: fadeIn 0.4s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; line-height: 1.5; color: #1e293b; }
+        input[type="text"], textarea { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; transition: border 0.3s; }
+        input[type="text"]:focus, textarea:focus { border-color: var(--primary); outline: none; }
+        textarea { resize: none; height: 95px; }
+        
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-top: 10px; }
+        .btn-select { padding: 12px; border: 1px solid #ddd; border-radius: 8px; background: #fff; cursor: pointer; font-size: 14px; transition: all 0.2s; text-align: center; }
+        .btn-select.selected { border-color: transparent; color: white; font-weight: bold; transform: scale(1.02); box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        
+        /* 🌊 빙산 컨테이너 */
+        .iceberg-container { 
+            width: 100%; 
+            height: 460px; 
+            background: #082f49; /* 이미지 로딩 전 대체 색상 */
+            border-radius: 16px; 
+            position: relative; 
+            overflow: hidden; 
+            margin: 20px 0; 
+            border: 2px solid #bae6fd; 
+            box-shadow: inset 0 0 30px rgba(0,0,0,0.5);
+        }
+        
+        .water-label { position: absolute; top: 5%; left: 10px; font-size: 11px; color: #0284c7; font-weight: bold; background: rgba(255,255,255,0.9); padding: 3px 8px; border-radius: 4px; z-index: 7; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .deep-label { position: absolute; top: 40%; left: 10px; font-size: 11px; color: #bae6fd; font-weight: bold; background: rgba(8, 47, 73, 0.8); padding: 3px 8px; border-radius: 4px; z-index: 7; border: 1px solid rgba(255,255,255,0.1); }
+
+        /* 빙산 뷰포트 및 대체된 이미지 스타일 */
+        .iceberg-art-wrapper { width: 100%; height: 100%; position: relative; z-index: 3; display: flex; flex-direction: column; align-items: center; }
+        
+        .iceberg-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            position: absolute;
+            top: 0;
+            left: 0;
+            border-radius: 14px;
+        }
+
+        /* 속감정 적층 텍스트 오버레이 (수면 아래로 위치 조정) */
+        .text-overlay-zone { 
+            position: absolute; 
+            top: 45%; /* 수면 아래부터 시작하도록 조정 */
+            width: 100%; 
+            height: 40%; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: flex-start; 
+            align-items: center; 
+            z-index: 10; 
+            pointer-events: none; 
+            gap: 8px; 
+            padding-top: 10px;
+        }
+        .visual-layer-tag { background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(4px); color: #0f172a; padding: 5px 12px; border-radius: 8px; font-size: 13px; font-weight: bold; box-shadow: 0 4px 12px rgba(0,0,0,0.2); animation: slideIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; border-left: 5px solid; }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(15px) scale(0.9); } to { opacity: 1; transform: translateY(0) scale(1); } }
+
+        /* 원천 욕구 기저부 코어 */
+        .core-sea-bed { position: absolute; bottom: 0; width: 100%; height: 15%; display: flex; justify-content: center; align-items: center; background: linear-gradient(to top, rgba(2, 132, 199, 0.6), transparent); border-top: 1px dashed rgba(56, 189, 248, 0.2); z-index: 3; }
+        .core-text-pulse { color: #e0f2fe; font-weight: bold; font-size: 13px; text-shadow: 0 0 10px #38bdf8, 0 0 20px #0284c7; animation: pulse 2s infinite alternate; }
+        @keyframes pulse { 0% { opacity: 0.7; transform: scale(0.98); } 100% { opacity: 1; transform: scale(1.03); } }
+
+        .btn-nav-container { display: flex; justify-content: space-between; margin-top: 25px; gap: 10px; }
+        .btn { flex: 1; padding: 14px; border: none; border-radius: 8px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s, transform 0.1s; }
+        .btn:active { transform: scale(0.98); }
+        .btn-next { background: var(--primary); color: white; }
+        .btn-next:hover { background: #357abd; box-shadow: 0 4px 10px rgba(74, 144, 226, 0.3); }
+        .btn-prev { background: #e2e8f0; color: #475569; }
+        .btn-prev:hover { background: #cbd5e1; }
+        
+        .custom-box { padding: 15px; border-radius: 8px; border: 1px dashed; margin-top: 8px; }
+        .box-blue { background: #f0f9ff; border-color: #7dd3fc; }
+        .box-green { background: #f0fdf4; border-color: #86efac; }
+        .box-pink { background: #fff0f5; border-color: #ffb8c6; }
+        .warm-word-box { background: #fff0f5; border-left: 5px solid #ff6b81; padding: 20px; margin-top: 15px; border-radius: 8px; text-align: center; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>🧊 감정의 빙산 마음 탐험</h1>
+    
+    <div class="step active" id="step1">
+        <h3>📍 Step 1. 탐험가 프로필</h3><br>
+        <div class="form-group"><label>이름</label><input type="text" id="name" placeholder="이름을 입력하세요"></div>
+        <div class="form-group"><label>학번</label><input type="text" id="studentId" placeholder="학번을 입력하세요"></div>
+        <div class="btn-nav-container"><button class="btn btn-next" onclick="saveStep1AndNext()">탐험 시작하기</button></div>
+    </div>
+
+    <div class="step" id="step2">
+        <h3>📍 Step 2. 나의 취향 지도</h3><br>
+        <div class="form-group"><label>내가 좋아하는 것 (나를 미소 짓게 만드는 것)</label><textarea id="like" placeholder="예: 좋아하는 음악, 취미, 들으면 기분 좋은 말 등"></textarea></div>
+        <div class="form-group"><label>내가 싫어하는 것 (나를 지치게 만드는 것)</label><textarea id="dislike" placeholder="예: 기숙사 소음, 오해받았을 때 등"></textarea></div>
+        <div class="btn-nav-container">
+            <button class="btn btn-prev" onclick="prevStep(1)">이전</button>
+            <button class="btn btn-next" onclick="saveStep2AndNext()">다음 단계</button>
+        </div>
+    </div>
+
+    <div class="step" id="step3">
+        <h3>📍 Step 3. 감정 전환 스위치</h3><br>
+        <div class="form-group"><label>기분을 빠르게 전환시키는 나만의 활동은?</label><textarea id="switchAct" placeholder="예: 최애 곡 듣기, 시원한 물 마시기, 3초 심호흡하기 등"></textarea></div>
+        <div class="btn-nav-container">
+            <button class="btn btn-prev" onclick="prevStep(2)">이전</button>
+            <button class="btn btn-next" onclick="saveStep3AndNext()">빙산 마주하기</button>
+        </div>
+    </div>
+
+    <div class="step" id="step4">
+        <h3>📍 Step 4. 수면 위 '겉감정' 선택</h3>
+        <p style="font-size:13px; color:#666; margin-top:5px;">현재 표면(10%)으로 드러나는 나의 대표 감정을 고르세요.</p>
+        <div class="grid" id="surface-grid"></div>
+        <div class="btn-nav-container">
+            <button class="btn btn-prev" onclick="prevStep(3)">이전</button>
+            <button class="btn btn-next" onclick="goToStep5()">수면 아래 들여다보기</button>
+        </div>
+    </div>
+
+    <div class="step" id="step5">
+        <h3>📍 Step 5. 수면 아래 '속감정' 선택 (다중 선택)</h3>
+        <p style="font-size:13px; color:#666; margin-top:5px;">그 감정 아래 층층이 숨겨진 진짜 속마음들을 모두 선택해 주세요.</p>
+        <div class="grid" id="deep-grid"></div>
+        <div class="btn-nav-container">
+            <button class="btn btn-prev" onclick="prevStep(4)">이전</button>
+            <button class="btn btn-next" onclick="goToStep6()">빙산 시각화</button>
+        </div>
+    </div>
+
+    <div class="step" id="step6">
+        <h3>📍 Step 6. 나의 감정 빙산 입체 분석</h3>
+        
+        <div class="iceberg-container">
+            <!-- 수면 라인 표시 (위치 조정) -->
+            <div class="water-label">수면 위 표면 감정 (10%)</div>
+            <div class="deep-label">수면 아래 감춰진 빙산 영역 (90%)</div>
+            
+            <div class="iceberg-art-wrapper">
+                <!-- 빙산 이미지 표시 영역 -->
+                <img src="빙산.png" alt="빙산" class="iceberg-image">
+                
+                <!-- 속감정 적층 텍스트 오버레이 영역 -->
+                <div class="text-overlay-zone" id="overlay-tag-zone"></div>
+            </div>
+            
+            <div class="core-sea-bed">
+                <div class="core-text-pulse">⚓ 최하단: 원천 욕구 심층 기저부</div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="custom-box box-blue">
+                <label id="analysis-q1" style="color: #0369a1;"></label>
+                <textarea id="analysis1" placeholder="타인의 내면을 관찰하듯 3인칭 관점에서 구체적인 스트레스 사건과 이유를 서술하세요."></textarea>
+            </div>
+        </div>
+        
+        <div class="form-group">
+            <div class="custom-box box-green">
+                <label id="analysis-q2" style="color: #15803d;"></label>
+                <textarea id="core-need" placeholder="내면 깊은 곳에서 나를 움직이는 본질적인 결핍이나, 앞으로 상황을 어떻게 주도적으로 이끌고 헤쳐 나가고 싶은지 방향성을 적어보세요."></textarea>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <div class="custom-box box-pink">
+                <label style="color: #9d174d;">질문 3. 내면의 빙산을 발견한 내가, 지금 당장 친구나 선생님에게 가장 듣고 싶은 '따뜻한 한마디'는 무엇인가요?</label>
+                <textarea id="analysis2" placeholder="예: 오늘 하루도 진짜 고생 많았어! / 네 마음이 그랬구나, 실수해도 괜찮아 등" style="margin-top: 5px;"></textarea>
+            </div>
+        </div>
+
+        <div class="btn-nav-container">
+            <button class="btn btn-prev" onclick="prevStep(5)">이전</button>
+            <button class="btn btn-next" onclick="generateResult()">탐험 완료하기</button>
+        </div>
+    </div>
+
+    <div class="step" id="step7">
+        <h3>📍 탐험 완료 결과 보고서</h3>
+        <div id="final-report" style="margin-top:15px; font-size:14px; line-height:1.6; border:1px solid #ddd; padding:15px; border-radius:8px; background:#fff;"></div>
+        <div class="comfort-box" id="haru-comfort"></div>
+        <div class="btn-nav-container">
+            <button class="btn btn-prev" onclick="prevStep(6)">이전 분석으로 돌아가기</button>
+            <button class="btn btn-next" onclick="resetAndReload()">새로운 탐험 시작하기</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    const emotionData = {
+        1: { name: "화 / 분노", color: "#ef4444", deeps: ["억울함", "무시당함", "서운함", "조급함", "피로함", "곤란함", "억압감", "침해당함", "불공평함", "답답함"] },
+        2: { name: "짜증 / 신경질", color: "#f97316", deeps: ["피곤함", "과제 압박", "수면 부족", "무력감", "귀찮음", "룸메이트 갈등", "불안정함", "뜻대로 안 됨", "예민함", "거슬림"] },
+        3: { name: "무기력 / 지루함", color: "#64748b", deeps: ["막막함", "실패 두려움", "번아웃", "흥미 잃음", "자신감 저하", "지침", "외로움", "비교의식", "목표 상실", "막연함"] },
+        4: { name: "불안 / 초조", color: "#eab308", deeps: ["잘하고 싶은 욕심", "실수할까 봐 두려움", "주변 시선 의식", "성적 압박", "준비 부족", "막막함", "고립감", "완벽주의", "과도한 긴장", "부담감"] },
+        5: { name: "슬픔 / 우울", color: "#3b82f6", deeps: ["그리움", "소외감", "이해받지 못함", "후회", "자책", "허전함", "위로받고 싶음", "속상함", "상처받음", "서글픔"] },
+        6: { name: "기쁨 / 활력", color: "#84cc16", deeps: ["인정받음", "성취감", "소속감", "자유로움", "기대감", "든든함", "보람", "자랑스러움", "안도감", "설레임"] },
+        7: { name: "평온 / 만족", color: "#10b981", deeps: ["안심", "편안함", "여유", "감사", "보호받음", "충족감", "충분함", "스트레스 없음", "수용됨", "조화로움"] },
+        8: { name: "설렘 / 기대", color: "#ec4899", deeps: ["잘해내고 싶음", "호기심", "희망", "변화 욕구", "의욕", "동기부여", "즐거운 상상", "성장 열망", "주도성", "활기"] },
+        9: { name: "고마움 / 신뢰", color: "#d97706", deeps: ["지지받음", "연결감", "든든함", "안도감", "존중받음", "유대감", "따뜻함", "보살핌", "친밀함", "다행스러움"] },
+        10: { name: "당당함 / 자신감", color: "#a855f7", deeps: ["해냈다는 뿌듯함", "주도함", "인정 욕구 충족", "독립심", "확신", "역량 발휘", "칭찬받음", "단단함", "성장 체감", "당당함"] }
+    };
+
+    let selectedSurface = null;
+    let selectedDeeps = []; 
+    let previousSurface = null; 
+
+    window.onload = function() {
+        if(localStorage.getItem('ib_name')) document.getElementById('name').value = localStorage.getItem('ib_name');
+        if(localStorage.getItem('ib_studentId')) document.getElementById('studentId').value = localStorage.getItem('ib_studentId');
+        if(localStorage.getItem('ib_like')) document.getElementById('like').value = localStorage.getItem('ib_like');
+        if(localStorage.getItem('ib_dislike')) document.getElementById('dislike').value = localStorage.getItem('ib_dislike');
+        if(localStorage.getItem('ib_switchAct')) document.getElementById('switchAct').value = localStorage.getItem('ib_switchAct');
+        
+        buildSurfaceGrid();
+    };
+
+    function saveStep1AndNext() {
+        localStorage.setItem('ib_name', document.getElementById('name').value);
+        localStorage.setItem('ib_studentId', document.getElementById('studentId').value);
+        nextStep(2);
+    }
+    function saveStep2AndNext() {
+        localStorage.setItem('ib_like', document.getElementById('like').value);
+        localStorage.setItem('ib_dislike', document.getElementById('dislike').value);
+        nextStep(3);
+    }
+    function saveStep3AndNext() {
+        localStorage.setItem('ib_switchAct', document.getElementById('switchAct').value);
+        nextStep(4);
+    }
+
+    function nextStep(stepNum) {
+        document.querySelectorAll('.step').forEach(s => s.classList.remove('active'));
+        document.getElementById('step' + stepNum).classList.add('active');
+    }
+    function prevStep(stepNum) {
+        nextStep(stepNum);
+    }
+
+    function buildSurfaceGrid() {
+        const surfaceGrid = document.getElementById('surface-grid');
+        surfaceGrid.innerHTML = '';
+        Object.keys(emotionData).forEach(key => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-select';
+            btn.id = 'surface-btn-' + key;
+            btn.innerText = emotionData[key].name;
+            
+            if (selectedSurface === key) {
+                btn.classList.add('selected');
+                btn.style.backgroundColor = emotionData[key].color;
+                btn.style.color = '#fff';
+            }
+            
+            btn.onclick = () => selectSurfaceEmotion(key);
+            surfaceGrid.appendChild(btn);
+        });
+    }
+
+    function selectSurfaceEmotion(id) {
+        selectedSurface = id;
+        document.querySelectorAll('#surface-grid .btn-select').forEach(b => {
+            b.classList.remove('selected');
+            b.style.backgroundColor = '#fff';
+            b.style.color = '#333';
+        });
+        
+        const element = document.getElementById('surface-btn-' + id);
+        element.classList.add('selected');
+        element.style.backgroundColor = emotionData[id].color;
+        element.style.color = '#fff';
+    }
+
+    function goToStep5() {
+        if (!selectedSurface) { alert('겉감정을 선택해 주세요!'); return; }
+        
+        if (selectedSurface !== previousSurface) {
+            selectedDeeps = [];
+            previousSurface = selectedSurface;
+        }
+
+        const deepGrid = document.getElementById('deep-grid');
+        deepGrid.innerHTML = ''; 
+
+        const deepEmotions = emotionData[selectedSurface].deeps;
+        deepEmotions.forEach(emotion => {
+            const btn = document.createElement('button');
+            btn.className = 'btn-select';
+            btn.innerText = emotion;
+            
+            if (selectedDeeps.includes(emotion)) {
+                btn.classList.add('selected');
+                btn.style.backgroundColor = emotionData[selectedSurface].color; 
+                btn.style.color = '#fff';
+            }
+
+            btn.onclick = () => {
+                if (selectedDeeps.includes(emotion)) {
+                    selectedDeeps = selectedDeeps.filter(item => item !== emotion);
+                    btn.classList.remove('selected');
+                    btn.style.backgroundColor = '#fff';
+                    btn.style.color = '#333';
+                } else {
+                    selectedDeeps.push(emotion);
+                    btn.classList.add('selected');
+                    btn.style.backgroundColor = emotionData[selectedSurface].color; 
+                    btn.style.color = '#fff';
+                }
+            };
+            deepGrid.appendChild(btn);
+        });
+        nextStep(5);
+    }
+
+    function goToStep6() {
+        if (selectedDeeps.length === 0) { alert('속감정을 최소 하나 이상 선택해 주세요!'); return; }
+        
+        const overlayZone = document.getElementById('overlay-tag-zone');
+        overlayZone.innerHTML = '';
+        
+        selectedDeeps.forEach((emotion, idx) => {
+            const tag = document.createElement('div');
+            tag.className = 'visual-layer-tag';
+            tag.innerText = `⚓ ${emotion}`;
+            tag.style.borderLeftColor = emotionData[selectedSurface].color;
+            // 순차적으로 애니메이션 등장 딜레이 적용
+            tag.style.animationDelay = `${idx * 0.15}s`;
+            tag.style.opacity = '0';
+            overlayZone.appendChild(tag);
+        });
+
+        document.getElementById('analysis-q1').innerText = `질문 1. [속마음 원인 분석] 수면 위 [${emotionData[selectedSurface].name}] 아래에 숨겨진 [${selectedDeeps.join(', ')}] 같은 속마음들은 왜 생겼나요? 무엇이 뜻대로 안 되는지, 왜 피곤한지, 해결해야 할 과제는 무엇인지 구체적으로 원인을 적어보세요.`;
+        document.getElementById('analysis-q2').innerText = `질문 2. [원천 욕구 및 방향 성찰] 이 복합적인 속감정들의 맨 밑바닥에 숨겨진 나의 '원천 욕구'는 무엇인가요? 앞으로 이 상황을 어떻게 바꾸고 싶은지, 어떻게 하고 싶은지 구체적인 생각과 방향을 적어보세요.`;
+        
+        nextStep(6);
+    }
+
+    function generateResult() {
+        const name = document.getElementById('name').value || '탐험가';
+        const sId = document.getElementById('studentId').value || '미입력';
+        const switchAct = document.getElementById('switchAct').value || '맑은 공기 마시기';
+        const ana1 = document.getElementById('analysis1').value || '미입력';
+        const coreNeed = document.getElementById('core-need').value || '미입력';
+        const ana2 = document.getElementById('analysis2').value || '오늘 하루도 수고 많았어!';
+
+        let textForPadlet = `[감정의 빙산 결과 보고서]\n\n`;
+        textForPadlet += `⚓ 탐험가: ${name} (${sId})\n`;
+        textForPadlet += `🌊 수면 위 겉감정: ${emotionData[selectedSurface].name}\n`;
+        textForPadlet += `⚓ 수면 아래 속감정(적층): ${selectedDeeps.join(' ➔ ')}\n`;
+        textForPadlet += `🎯 심층 원천 욕구 및 도달 방향: ${coreNeed}\n\n`;
+        textForPadlet += `🧠 속마음 세부 원인 분석: ${ana1}\n`;
+        textForPadlet += `💖 내가 듣고 싶은 한마디: "${ana2}"\n\n`;
+        textForPadlet += `🌟 하람이의 추천 행동스위치:\n1. 3번 깊게 심호흡 하기\n2. 물 한 잔 마시기\n3. [ ${switchAct} ] 즉시 실천하기`;
+
+        try {
+            document.execCommand('copy'); 
+            // navigator.clipboard 대안 처리
+            const tempInput = document.createElement("textarea");
+            tempInput.value = textForPadlet;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempInput);
+            
+            alert("✨ 마음사전 결과 및 심층 성찰 파일이 자동으로 복사되었습니다!\n확인을 누르면 우리 학급 전용 공식 패들릿으로 연동 이동합니다.");
+            window.open("https://padlet.com/automotive260/padlet-ncld17n0tqw4ueam", "_blank");
+        } catch(err) {
+            window.open("https://padlet.com/automotive260/padlet-ncld17n0tqw4ueam", "_blank");
+        }
+
+        let reportHtml = `
+            <strong>⚓ 탐험가 프로필:</strong> ${name} (${sId})<br><br>
+            <strong>🎨 입체 정서 스펙트럼 구조:</strong><br>
+            - 수면 위(겉감정): <span style="color:${emotionData[selectedSurface].color}; font-weight:bold;">${emotionData[selectedSurface].name}</span><br>
+            - 수면 아래(속감정 적층체): <strong>${selectedDeeps.join(' ➔ ')}</strong><br>
+            - 🎯 최하단 원천 욕구 및 향후 의지선: <span style="color:#15803d; font-weight:bold;">${coreNeed}</span><br><br>
+            <strong>🧠 속마음 유발 원인 정밀 서술:</strong><br>
+            - ${ana1}<br>
+            
+            <div class="warm-word-box">
+                <span style="font-size:12px; color:#ff4757; font-weight:bold; display:block; margin-bottom:5px;">💖 가장 듣고 싶은 따뜻한 한마디</span>
+                <div style="font-size:18px; font-weight:bold;">"${ana2}"</div>
+            </div>
+        `;
+        document.getElementById('final-report').innerHTML = reportHtml;
+
+        let comfortHtml = `
+            <div style="margin-top:20px; padding: 20px; background: #f8fafc; border-radius: 12px; border: 1px solid #e2e8f0;">
+                <strong style="color:var(--primary); font-size:16px;">🌟 인공지능 하람이가 분석한 마음 지도</strong><br><br>
+                <strong>${name}</strong> 학생, 표면의 <strong>'${emotionData[selectedSurface].name}'</strong> 아래에 단단히 쌓여있던 <strong>'${selectedDeeps.join(', ')}'</strong>의 층층을 밝혀내고 결국 <strong>'${coreNeed}'</strong>(이)라는 근원 욕구와 주도적 해결선까지 진입했구나.<br><br>
+                내면을 객관화하여 조망하는 힘이 최고의 인성 역량이란다. 네 마음에 필요한 긍정 에너지를 공급하기 위해 지금 즉시 <strong>[ ${switchAct} ]</strong>을(를) 실천해 보렴. 하람이가 언제나 함께할게! 💙
+            </div>
+        `;
+        document.getElementById('haru-comfort').innerHTML = comfortHtml;
+
+        nextStep(7);
+    }
+
+    function resetAndReload() {
+        location.reload();
+    }
+</script>
+</body>
+</html>
