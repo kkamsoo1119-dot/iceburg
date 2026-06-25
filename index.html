@@ -95,6 +95,36 @@
         .box-green { background: #f0fdf4; border-color: #86efac; }
         .box-pink { background: #fff0f5; border-color: #ffb8c6; }
         .warm-word-box { background: #fff0f5; border-left: 5px solid #ff6b81; padding: 20px; margin-top: 15px; border-radius: 8px; text-align: center; }
+
+        /* 하단 고정 홈 버튼 스타일 (M.A.P.S. 공통) */
+        .app-footer {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        .btn-home-footer {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #ffffff;
+            color: #475569;
+            border: 2px solid #cbd5e1;
+            padding: 14px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.2s;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .btn-home-footer:hover {
+            background: #f1f5f9;
+            color: #0f172a;
+            border-color: #94a3b8;
+        }
     </style>
 </head>
 <body>
@@ -205,6 +235,17 @@
             <button class="btn btn-next" onclick="resetAndReload()">새로운 탐험 시작하기</button>
         </div>
     </div>
+
+    <!-- M.A.P.S. 통합 앱으로 돌아가는 상시 노출 홈 버튼 -->
+    <div class="app-footer">
+        <a href="https://kkamsoo1119-dot.github.io/M.A.P.S./" class="btn-home-footer">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+            </svg>
+            M.A.P.S. 첫 화면으로 이동
+        </a>
+    </div>
+
 </div>
 
 <script>
